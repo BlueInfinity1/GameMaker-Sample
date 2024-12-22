@@ -1,6 +1,8 @@
+// NOTE: This function was created before structs were available in GameMaker, which is why we needed multiple, specialized 2D arrays to handle certain tasks
+
 // Argument details
 // arg0 - Row to check
-// arg1 - Column to check (-1 if no check)
+// arg1 - Column to check
 
 // Initialize variables and special effect checks
 checkableSpecials = 0;
@@ -37,9 +39,9 @@ if (argument0 > -0.1) {
         scrInitializeColumnMatchCheck(lowestRowToCheck);
 
         for (j = lowestRowToCheck + 1; j <= highestRowToCheck; j++) {
-            if ((gemGrid[i, j] == trackedColor || gemGrid[i, j] == 6) && spaceGrid[i, j] < 0.1) {
+            if ((gemGrid[i, j] == trackedColor || gemGrid[i, j] == JOKER_INDEX) && spaceGrid[i, j] < 0.1) {
                 sameGems++;
-                consecutiveJokerCount += (gemGrid[i, j] == 6) ? 1 : 0;
+                consecutiveJokerCount += (gemGrid[i, j] == JOKER_INDEX) ? 1 : 0;
             } else {
                 // Handle matches of 3, 4, 5, or more
                 if (sameGems == 3) {
@@ -75,9 +77,9 @@ if (argument1 > -0.1) {
         scrInitializeRowMatchCheck(lowestColumnToCheck);
 
         for (i = lowestColumnToCheck + 1; i <= highestColumnToCheck; i++) {
-            if ((gemGrid[i, j] == trackedColor || gemGrid[i, j] == 6) && spaceGrid[i, j] < 0.1) {
+            if ((gemGrid[i, j] == trackedColor || gemGrid[i, j] == JOKER_INDEX) && spaceGrid[i, j] < 0.1) {
                 sameGems++;
-                consecutiveJokerCount += (gemGrid[i, j] == 6) ? 1 : 0;
+                consecutiveJokerCount += (gemGrid[i, j] == JOKER_INDEX) ? 1 : 0;
             } else {
                 // Handle matches of 3, 4, 5, or more
                 if (sameGems == 3) {

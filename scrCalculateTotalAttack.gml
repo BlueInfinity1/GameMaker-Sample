@@ -1,93 +1,97 @@
 /// @function scrCalculateTotalAttack()
-/// @desc Calculates the total attack of the hero, taking base stats, items, buffs and other status effects into account and places the result in heroTotalAtk variable
+/// @desc Calculates the total attack of the hero, factoring in base stats, items, buffs, and status effects.
+///       The result is stored in the `heroTotalAtk` variable.
 
-function scrCalculateTotalAttack() 
-{
-	var allowTapDamageBoosting;
-	
-	if tapDamageBonusMod > 0.1 //we've tapped at the right time, so allow boosting this further with the Turbo Controller item	
-		allowTapDamageBoosting = true	
-	else
-	{
-	    allowTapDamageBoosting = false
-	    chargeStrike1TurnsWithoutMissingTap = 0
-	}
+function scrCalculateTotalAttack() {
+    // Initialize variables
+    var allowTapDamageBoosting = false;
 
-	heroTotalAtk = 0
+    // Check if tap damage boosting is allowed
+    if (tapDamageBonusMod > 0.1) {
+        allowTapDamageBoosting = true;
+    } else {
+        chargeStrike1TurnsWithoutMissingTap = 0;
+    }
 
-	var totalEAtk = 0
-	var totalEAtkMod = 0
-	var totalEAtkAreaMod = 0
+    // Reset hero total attack
+    heroTotalAtk = 0;
 
-	//gather that attack-affecting modifiers from all 5 items you've equipped
-	for (var i = 0; i < 5; i += 1)
-	{
-	    totalEAtk += eAtk[i]
-	    totalEAtkMod += eAtkMod[i]
-    
-	    if room != MainMenu //do the following only in battle
-	    {
-	        if eConditionalAtkMod[i] != 0
-	        {        
-	            if heroHp/heroTotalMaxHp <= eAtkModHpCondition[i]
-	            totalEAtkMod += eConditionalAtkMod[i]
-	        }
-        
-	        if eWaterAreaAtkBoost[i] != 0
-	        totalEAtkAreaMod += eWaterAreaAtkBoost[i]
-        
-	        if eFullHpAtkMod[i] != 0
-	        {
-	            if heroHp = heroTotalMaxHp
-	            totalEAtkMod += eFullHpAtkMod[i]
-	        }
-        
-	        if eNoDamageKillAtkMod[i] != 0 //we're assuming you can only have one item equipped that affects this
-	        {
-	            var tempAtkMultiplier = min(enemiesSlainInRowWithoutDamage, eNoDamageKillAtkLimit[i])        
-	            totalEAtkMod += (eNoDamageKillAtkMod[i]*tempAtkMultiplier)
-	        }
-        
-	        if allowTapDamageBoosting
-	        tapDamageBonusMod += eTapDamageMod[i]
-	    }       
-	}
+    // Initialize equipment modifiers
+    var totalEAtk = 0;
+    var totalEAtkMod = 0;
+    var totalEAtkAreaMod = 0;
 
-	//the base attack power after equipment modifiers and skill base power have been factored in
-	heroTotalAtk = round(((heroAtk + totalEAtk)*(1 + totalEAtkMod + totalEAtkAreaMod + stackingAtkMod + abilityAtkMod))*(1 + tapDamageBonusMod))
+    // Gather attack-affecting modifiers from equipped items
+    for (var i = 0; i < 5; i++) {
+        totalEAtk += eAtk[i];
+        totalEAtkMod += eAtkMod[i];
 
-	//Since the formula accounting for all previous modifiers is already long, we'll go through the skill-specific modifiers one by one
+        // Apply conditional modifiers only in battle
+        if (room != MainMenu) {
+            // Conditional attack modifier based on HP
+            if (eConditionalAtkMod[i] != 0 && heroHp / heroTotalMaxHp <= eAtkModHpCondition[i]) {
+                totalEAtkMod += eConditionalAtkMod[i];
+            }
 
-	if hpDependentAttackOn
-	{
-	    var atkBoostByHp = (heroHp/heroTotalMaxHp)*0.4 //the change interval is 40%    
-	    atkBoostByHp = 1 + heroTotalMaxAttackBoostByFullHp - 0.4 + atkBoostByHp //first set the range for this modifier, e.g. 0.8 to 1.2x or 0.9 to 1.3x, then add the effect of current hp
-	    heroTotalAtk = round(heroTotalAtk*atkBoostByHp)
-	}
+            // Area-specific attack modifier
+            if (eWaterAreaAtkBoost[i] != 0) {
+                totalEAtkAreaMod += eWaterAreaAtkBoost[i];
+            }
 
-	heroTotalAtk = round(heroTotalAtk*powerUpMod) //Power Up skill has been used
+            // Full HP attack bonus
+            if (eFullHpAtkMod[i] != 0 && heroHp == heroTotalMaxHp) {
+                totalEAtkMod += eFullHpAtkMod[i];
+            }
 
-	if gambleSkillOn //factor in the effects of the Gamble skill
-	{
-	    if tapDamageBonusLevel = 2 //tap damage boost has been done perfectly	    
-	        heroTotalAtk = round(heroTotalAtk*gambleAtkMod) 
-	    else //missed tap damage boost
-	        heroTotalAtk = round(heroTotalAtk*0.25)	    
-    
-	    gambleSkillOn = false
-	}	
+            // No damage kill attack bonus
+            if (eNoDamageKillAtkMod[i] != 0) {
+                var tempAtkMultiplier = min(enemiesSlainInRowWithoutDamage, eNoDamageKillAtkLimit[i]);
+                totalEAtkMod += eNoDamageKillAtkMod[i] * tempAtkMultiplier;
+            }
 
-	if attackGamble //factor in the effect of the Dice item
-	{
-	    var luckBoost = (1 - power(0.99,heroTotalLuck))*2
-	    var diceDamageBoostMod = 1 + round(random(5 + luckBoost))
-		
-	    if diceDamageBoostMod >= 6
-	    diceDamageBoostMod = 6
-    
-	    heroTotalAtk *= (0.5 + diceDamageBoostMod*0.25)
-	}
+            // Tap damage bonus
+            if (allowTapDamageBoosting) {
+                tapDamageBonusMod += eTapDamageMod[i];
+            }
+        }
+    }
 
-	if heroTotalAtk < 0.1
-	heroTotalAtk = 0
+    // Calculate base attack after equipment modifiers
+    heroTotalAtk = round(
+        ((heroAtk + totalEAtk) * (1 + totalEAtkMod + totalEAtkAreaMod + stackingAtkMod + abilityAtkMod)) * 
+        (1 + tapDamageBonusMod)
+    );
+
+    // Apply skill-specific modifiers
+    if (hpDependentAttackOn) {
+        var atkBoostByHp = (heroHp / heroTotalMaxHp) * 0.4;
+        atkBoostByHp = 1 + heroTotalMaxAttackBoostByFullHp - 0.4 + atkBoostByHp;
+        heroTotalAtk = round(heroTotalAtk * atkBoostByHp);
+    }
+
+    // Power-Up skill modifier
+    heroTotalAtk = round(heroTotalAtk * powerUpMod);
+
+    // Gamble skill effects
+    if (gambleSkillOn) {
+        if (tapDamageBonusLevel == 2) {
+            heroTotalAtk = round(heroTotalAtk * gambleAtkMod);
+        } else {
+            heroTotalAtk = round(heroTotalAtk * 0.25);
+        }
+        gambleSkillOn = false;
+    }
+
+    // Dice item effect
+    if (attackGamble) {
+        var luckBoost = (1 - power(0.99, heroTotalLuck)) * 2;
+        var diceDamageBoostMod = 1 + round(random(5 + luckBoost));
+        diceDamageBoostMod = min(diceDamageBoostMod, 6);
+        heroTotalAtk *= (0.5 + diceDamageBoostMod * 0.25);
+    }
+
+    // Ensure attack value is non-negative
+    if (heroTotalAtk < 0.1) {
+        heroTotalAtk = 0;
+    }
 }
